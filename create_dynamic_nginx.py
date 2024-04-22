@@ -1,19 +1,45 @@
-# Replace placeholders in the template with actual values
 import os
+
+template_name = 'template.robo2mation.com'
+site_available_path = '/etc/nginx/sites-available/'
+site_enabled_path = '/etc/nginx/sites-enabled/'
+nginx_reload_command = 'sudo systemctl reload nginx'
+
+
+def is_file_exists(file_path: str) -> bool:
+    """
+    Checks if the given file exists.
+    :param file_path:
+    :return: `True` if file exists, otherwise `False`
+    """
+
+    return os.path.exists(file_path)
 
 
 def generate_config(domain):
-    with open('template.robo2mation.com', 'r') as f:
+    # Open template in read mode
+    with open(template_name, 'r') as f:
         template = f.read()
-    # config = template.replace('{{DOMAIN}}', domain).replace('{{BACKEND_SERVER}}', backend_server)
+
+    # Replace the domain into `template.robo2mation.com`
     config = template.replace('{{DOMAIN}}', domain)
-    with open(f'/etc/nginx/sites-available/{domain}', 'w') as f:
+
+    # create subdomain file
+    with open(f'{site_available_path}{domain}', 'w') as f:
+        # write into the created subdomain file
         f.write(config)
+
+        file_path = f'{site_enabled_path}{domain}'
+        # check given domain is exists in `sites-enabled` or not
+        if is_file_exists(file_path) is False:
+            # if file not exists, then create symbolic link
+            os.system(f'sudo ln -s {site_available_path}{domain} {site_enabled_path}')
+
         # Reload Nginx configuration
-        os.system(f'sudo ln -s /etc/nginx/sites-available/{domain} /etc/nginx/sites-enabled/')
-        os.system('sudo systemctl reload nginx')
-        # os.system(f'sudo certbot --nginx -d {domain}')
-        print("Created nginx config")
+        os.system(nginx_reload_command)
+
+        print(f"Subdomain ({domain}) added to nginx configuration")
+
 
 # Example usage
-generate_config('onebank.robo2mation.com', )
+generate_config('onebank.robo2mation.com')
